@@ -4,6 +4,8 @@ import { Routes, Route } from "react-router-dom";
 import HomePage from "./pages/HomePage.jsx";
 import PanelPage from "./pages/PanelPage.jsx";
 import AuthPage from "./pages/AuthPage.jsx";   // 👈 combinado
+import NuevoNegocioPage from "./pages/NuevoNegocioPage.jsx";
+import PersonalizarTiendaPage from "./pages/PersonalizarTiendaPage.jsx";
 
 
 
@@ -19,6 +21,10 @@ export default function App() {
 
       {/* 🔥 Panel admin A PANTALLA COMPLETA, sin AdminLayout */}
       <Route path="/panel" element={<PanelPage />} />
+      
+      {/* Negocios */}
+      <Route path="/negocios/nuevo" element={<NuevoNegocioPage />} />
+      <Route path="/negocios/:idNegocio/personalizar" element={<PersonalizarTiendaPage />} />
     </Routes>
   );
 }

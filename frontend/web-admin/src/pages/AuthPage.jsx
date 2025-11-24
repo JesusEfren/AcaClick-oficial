@@ -43,7 +43,27 @@ export default function AuthPage({ initialView = "login" }) {
       navigate("/panel");
     } catch (err) {
       console.error("Error al iniciar sesión:", err);
-      setLoginError("No se pudo iniciar sesión. Verifica correo y contraseña.");
+      // Mostrar el mensaje de error específico del servidor si está disponible
+      let errorMessage = "No se pudo iniciar sesión. Verifica correo y contraseña.";
+      
+      if (err?.data) {
+        // Intentar diferentes formatos de error
+        if (typeof err.data === 'string') {
+          errorMessage = err.data;
+        } else if (err.data.detail) {
+          errorMessage = err.data.detail;
+        } else if (err.data.error) {
+          errorMessage = err.data.error;
+        } else if (err.data.non_field_errors && err.data.non_field_errors.length > 0) {
+          errorMessage = err.data.non_field_errors[0];
+        } else if (err.data.correo) {
+          errorMessage = Array.isArray(err.data.correo) ? err.data.correo[0] : err.data.correo;
+        } else if (err.data.password) {
+          errorMessage = Array.isArray(err.data.password) ? err.data.password[0] : err.data.password;
+        }
+      }
+      
+      setLoginError(errorMessage);
     } finally {
       setLoginLoading(false);
     }

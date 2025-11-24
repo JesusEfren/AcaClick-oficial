@@ -89,7 +89,7 @@ acaclick_db_<nombre>
 Todas las APIs se exponen bajo el prefijo:
 /api/<nombre>/...
 
-El frontend admin vive en:
+El frontend admin vive en:sigo 
 acaclick/frontend/web-admin
 
 Recomendación: usar como plantilla el microservicio ms_usuarios que ya está funcionando.
