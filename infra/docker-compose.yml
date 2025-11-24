@@ -13,5 +13,19 @@ services:
     volumes:
       - db_usuarios_data:/var/lib/postgresql/data
 
+  db_negocios:
+    image: postgres:16
+    container_name: acaclick_db_negocios
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: acaclick_negocios
+      POSTGRES_USER: acaclick_user
+      POSTGRES_PASSWORD: acaclick_password
+    ports:
+      - "5434:5432"   # puerto host 5434 → contenedor 5432
+    volumes:
+      - db_negocios_data:/var/lib/postgresql/data
+
 volumes:
   db_usuarios_data:
+  db_negocios_data:
