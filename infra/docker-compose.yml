@@ -20,11 +20,8 @@ services:
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-
-      # 👇 Muy importante:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
-
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
@@ -42,5 +39,19 @@ services:
     volumes:
       - db_usuarios_data:/var/lib/postgresql/data
 
+  db_negocios:
+    image: postgres:16
+    container_name: acaclick_db_negocios
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: acaclick_negocios
+      POSTGRES_USER: acaclick_user
+      POSTGRES_PASSWORD: acaclick_password
+    ports:
+      - "5434:5432"
+    volumes:
+      - db_negocios_data:/var/lib/postgresql/data
+
 volumes:
   db_usuarios_data:
+  db_negocios_data:

@@ -1,19 +1,22 @@
 // src/pages/PanelPage.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser } from "../services/api";
+import { getCurrentUser, listarNegociosUsuario } from "../services/api";
 
 export default function PanelPage() {
   const navigate = useNavigate();
   const [usuario, setUsuario] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [negocios, setNegocios] = useState([]);
+  const [loadingNegocios, setLoadingNegocios] = useState(true);
 
   // UI state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [perfilOpen, setPerfilOpen] = useState(false);
 
+  // 1️⃣ Cargar usuario logeado
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
 
@@ -30,7 +33,6 @@ export default function PanelPage() {
         console.error("Error obteniendo usuario:", err);
         setError("No se pudo cargar la información del usuario.");
 
-        // si el token es inválido
         if (err.status === 401) {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
@@ -43,6 +45,26 @@ export default function PanelPage() {
 
     cargarUsuario();
   }, [navigate]);
+
+  // 2️⃣ Cargar negocios del usuario logeado
+  useEffect(() => {
+    if (!usuario || !usuario.id_usuario) return;
+
+    async function cargarNegocios() {
+      try {
+        setLoadingNegocios(true);
+        const data = await listarNegociosUsuario(usuario.id_usuario);
+        setNegocios(data || []);
+      } catch (err) {
+        console.error("Error obteniendo negocios del usuario:", err);
+        setNegocios([]);
+      } finally {
+        setLoadingNegocios(false);
+      }
+    }
+
+    cargarNegocios();
+  }, [usuario]);
 
   function handleLogout() {
     localStorage.removeItem("accessToken");
@@ -91,7 +113,8 @@ export default function PanelPage() {
   }`.trim();
 
   const iniciales =
-    (nombre?.[0] || "").toUpperCase() + (apellido_paterno?.[0] || "").toUpperCase();
+    (nombre?.[0] || "").toUpperCase() +
+    (apellido_paterno?.[0] || "").toUpperCase();
 
   const rolTexto = rol?.nombre_rol || rol?.role || "Sin rol asignado";
 
@@ -154,7 +177,9 @@ export default function PanelPage() {
         <aside
           id="sidebar"
           className={`fixed lg:sticky top-14 lg:top-0 left-0 h-[calc(100vh-3.5rem)] lg:h-screen w-72 z-40 flex flex-col shadow-2xl lg:shadow-none border-r border-gray-200 bg-white ${
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+            mobileMenuOpen
+              ? "translate-x-0"
+              : "-translate-x-full lg:translate-x-0"
           } transition-transform duration-300`}
         >
           {/* Logo desktop */}
@@ -240,7 +265,7 @@ export default function PanelPage() {
                 </div>
                 <span className="text-sm">Mis Negocios</span>
                 <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 font-semibold">
-                  3
+                  {negocios.length}
                 </span>
               </div>
 
@@ -465,11 +490,11 @@ export default function PanelPage() {
             <div className="px-8 py-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-            <img
-              src="/imagenes/AcaClickLogo.png"
-              alt="AcaClick Logo"
-              className="w-10 h-10"
-            />
+                  <img
+                    src="/imagenes/AcaClickLogo.png"
+                    alt="AcaClick Logo"
+                    className="w-10 h-10"
+                  />
                   <div>
                     <h1 className="text-2xl font-bold text-gray-900">
                       Panel Principal
@@ -498,7 +523,10 @@ export default function PanelPage() {
                     </span>
                     <span className="absolute top-2 right-2 w-2 h-2 bg-orange-500 rounded-full" />
                   </button>
-                  <button className="bg-gradient-to-r from-orange-500 to-purple-600 px-6 py-2.5 text-white text-sm font-semibold rounded-lg flex items-center gap-2 shadow-lg">
+                  <button 
+                    onClick={() => navigate("/negocios/nuevo")}
+                    className="bg-gradient-to-r from-orange-500 to-purple-600 px-6 py-2.5 text-white text-sm font-semibold rounded-lg flex items-center gap-2 shadow-lg hover:opacity-90 transition"
+                  >
                     <span className="inline-flex items-center justify-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -548,9 +576,10 @@ export default function PanelPage() {
                 <p className="text-sm font-medium text-gray-600 mb-1">
                   Negocios Activos
                 </p>
-                <p className="text-3xl font-bold text-gray-900">3</p>
+                <p className="text-3xl font-bold text-gray-900">{negocios.length}</p>
                 <p className="text-xs text-gray-500 mt-2">
-                  2 activos, 1 pausado
+                  {negocios.filter(n => n.activo).length} activos
+                  {negocios.filter(n => !n.activo).length > 0 && `, ${negocios.filter(n => !n.activo).length} pausados`}
                 </p>
               </div>
 
@@ -776,23 +805,179 @@ export default function PanelPage() {
               </div>
             </div>
 
-            {/* Aquí irían las tarjetas de negocios (por ahora mock) */}
+            {/* Tus Negocios */}
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h2 className="text-xl font-bold text-gray-900">
-                  Tus Negocios
-                </h2>
+                <h2 className="text-xl font-bold text-gray-900">Tus Negocios</h2>
                 <p className="text-sm text-gray-600 mt-1">
                   Gestiona y monitorea todos tus negocios
                 </p>
               </div>
             </div>
 
-            {/* TODO: sustituir por lista real de negocios cuando tengas el microservicio  */}
-            <p className="text-sm text-gray-500">
-              (Aquí conectaremos el microservicio de <strong>negocios</strong>:
-              listar, crear, pausar, administrar plantillas, etc.)
-            </p>
+            {/* Lista de negocios */}
+            {loadingNegocios ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Cargando tus negocios...</p>
+              </div>
+            ) : negocios.length === 0 ? (
+              <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="32"
+                    height="32"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="text-gray-400"
+                  >
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  No tienes negocios aún
+                </h3>
+                <p className="text-sm text-gray-500 mb-6">
+                  Comienza creando tu primer negocio
+                </p>
+                <button
+                  onClick={() => navigate("/negocios/nuevo")}
+                  className="bg-gradient-to-r from-orange-500 to-purple-600 px-6 py-3 text-white font-semibold rounded-lg hover:opacity-90 transition"
+                >
+                  Crear mi primer negocio
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {negocios.map((negocio) => (
+                  <div
+                    key={negocio.id_negocio}
+                    className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition cursor-pointer"
+                    onClick={() => {
+                      // Navegar al dashboard del negocio
+                      navigate(`/negocios/${negocio.id_negocio}`);
+                    }}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        {negocio.logo_url ? (
+                          <img
+                            src={negocio.logo_url}
+                            alt={negocio.nombre}
+                            className="w-12 h-12 rounded-lg object-cover"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-400 to-purple-600 flex items-center justify-center text-white font-bold">
+                            {negocio.nombre.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <div>
+                          <h3 className="font-bold text-gray-900">{negocio.nombre}</h3>
+                          <p className="text-xs text-gray-500 capitalize">{negocio.tipo}</p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full font-semibold ${
+                          negocio.activo
+                            ? "bg-green-100 text-green-700"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {negocio.activo ? "Activo" : "Pausado"}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                      {negocio.descripcion || "Sin descripción"}
+                    </p>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                          <circle cx="12" cy="10" r="3" />
+                        </svg>
+                        <span className="truncate">{negocio.direccion}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="14"
+                          height="14"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                        </svg>
+                        <span>{negocio.telefono}</span>
+                      </div>
+                      {negocio.horario_apertura && negocio.horario_cierre && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <polyline points="12 6 12 12 16 14" />
+                          </svg>
+                          <span>
+                            {negocio.horario_apertura} - {negocio.horario_cierre}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                      <span className="text-xs text-gray-500">
+                        Creado {new Date(negocio.creado_en).toLocaleDateString()}
+                      </span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/negocios/${negocio.id_negocio}/personalizar`);
+                          }}
+                          className="text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                        >
+                          Personalizar →
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/negocios/${negocio.id_negocio}`);
+                          }}
+                          className="text-xs text-gray-600 hover:text-gray-700 font-semibold"
+                        >
+                          Gestionar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </main>
       </div>
